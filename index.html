@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NSE Investment App</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>NSE Investment App (Prototype)</h1>
+
+  <!-- Step 1: Registration -->
+  <div id="registerBox">
+    <h3>Register New Account</h3>
+    <input type="text" id="regName" placeholder="Full Name">
+    <input type="email" id="regEmail" placeholder="Email">
+    <input type="text" id="regPhone" placeholder="Phone Number">
+    <input type="text" id="regID" placeholder="National ID">
+    <input type="password" id="regPassword" placeholder="Password">
+    <button onclick="register()">Register</button>
+  </div>
+
+  <!-- Step 2: Login -->
+  <div id="loginBox">
+    <h3>Login</h3>
+    <input type="text" id="loginName" placeholder="Full Name">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Step 3: Choose Mode -->
+  <div id="modeChoice" style="display:none">
+    <h3>Choose Investment Mode</h3>
+    <button onclick="chooseCDSC()">Invest Individually (CDSC)</button>
+    <button onclick="chooseSacco()">Join/Create Sacco Group</button>
+  </div>
+
+  <!-- Wallet + MPESA -->
+  <div id="walletSection" style="display:none">
+    <h3>Wallet Balance: <span id="wallet">KES 0</span></h3>
+    <input type="text" id="mpesaPhone" placeholder="Phone Number">
+    <input type="number" id="mpesaAmount" placeholder="Amount to Deposit">
+    <button onclick="sendSTK()">Deposit via M-PESA</button>
+  </div>
+
+  <!-- Shares + Unit Trust -->
+  <div id="tradeSection" style="display:none">
+    <h3>Buy Shares</h3>
+    <select id="companySelect"></select>
+    <input type="number" id="shareAmount" placeholder="Shares">
+    <button onclick="buyShares()">Buy</button>
+
+    <h3>Buy Unit Trust</h3>
+    <select id="unitTrustSelect"></select>
+    <input type="number" id="unitAmount" placeholder="Units">
+    <button onclick="buyUnitTrust()">Buy Unit Trust</button>
+  </div>
+
+  <!-- Portfolio + Statement -->
+  <div id="portfolioSection" style="display:none">
+    <h3>Your Portfolio</h3>
+    <ul id="portfolioList"></ul>
+    <canvas id="portfolioChart" width="300" height="300"></canvas>
+    <button onclick="exportCDSC()">Export CDSC Statement</button>
+  </div>
+
+  <!-- Leaderboard + Sacco -->
+  <div id="groupSection" style="display:none">
+    <h3>Sacco Members</h3>
+    <ul id="saccoMembers"></ul>
+    <h3>Leaderboard</h3>
+    <ul id="leaderboard"></ul>
+  </div>
+
+  <!-- Dividends -->
+  <div id="dividendsBox" style="display:none">
+    <h3>Total Dividends Earned: <span id="dividends">KES 0</span></h3>
+  </div>
+
+  <!-- News + Trends -->
+  <div id="newsSection" style="display:none">
+    <h3>Market Trends & News</h3>
+    <ul id="marketNews"></ul>
+  </div>
+
+  <pre id="logBox"></pre>
+  <script src="script.js"></script>
+</body>
+</html>
