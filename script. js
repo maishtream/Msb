@@ -1,0 +1,244 @@
+let users = [];
+let currentUser = null;
+let wallet = 0;
+let portfolio = {};
+let dividends = 0;
+let leaderboard = [];
+let sacco = [];
+
+const companies = [
+  { name: "Safaricom", price: 25 },
+  { name: "Equity Bank", price: 45 },
+  { name: "KCB Group", price: 41 },
+  { name: "EABL", price: 150 },
+  { name: "Co-op Bank", price: 13 },
+  { name: "Centum", price: 9 },
+  { name: "KenGen", price: 4.5 },
+  { name: "NCBA", price: 35 },
+  { name: "Absa Bank", price: 12 },
+  { name: "Jubilee Holdings", price: 210 }
+];
+
+const unitTrusts = [
+  { name: "ICEA Money Market", price: 1.05 },
+  { name: "Old Mutual Balanced Fund", price: 1.12 },
+  { name: "CIC Money Market", price: 1.08 }
+];
+
+function log(msg) {
+  document.getElementById("logBox").textContent += `\n${msg}`;
+}
+
+// Registration
+function register() {
+  const name = document.getElementById("regName").value;
+  const email = document.getElementById("regEmail").value;
+  const phone = document.getElementById("regPhone").value;
+  const id = document.getElementById("regID").value;
+  const pass = document.getElementById("regPassword").value;
+
+  if (!name || !email || !phone || !id || !pass) return alert("Fill all fields");
+
+  users.push({ name, email, phone, id, pass });
+  alert("✅ Registered! Now login.");
+}
+
+// Login
+function login() {
+  const name = document.getElementById("loginName").value;
+  const pass = document.getElementById("loginPassword").value;
+
+  const user = users.find(u => u.name === name && u.pass === pass);
+  if (!user) return alert("❌ Invalid credentials");
+
+  currentUser = user;
+  document.getElementById("registerBox").style.display = "none";
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("modeChoice").style.display = "block";
+}
+
+// Mode select
+function chooseCDSC() {
+  showMainSections();
+  log("📘 You are now using a personal CDSC account.");
+}
+function chooseSacco() {
+  showMainSections();
+  sacco.push(currentUser.name);
+  log("👥 You joined a Sacco investment group.");
+}
+
+// Show main sections
+function showMainSections() {
+  document.getElementById("modeChoice").style.display = "none";
+  document.getElementById("walletSection").style.display = "block";
+  document.getElementById("tradeSection").style.display = "block";
+  document.getElementById("portfolioSection").style.display = "block";
+  document.getElementById("groupSection").style.display = "block";
+  document.getElementById("dividendsBox").style.display = "block";
+  document.getElementById("newsSection").style.display = "block";
+  loadOptions();
+  updatePortfolioUI();
+  showLeaderboard();
+  showNews();
+}
+
+// Load companies & unit trusts
+function loadOptions() {
+  const companySelect = document.getElementById("companySelect");
+  const unitSelect = document.getElementById("unitTrustSelect");
+  companies.forEach(c => {
+    const opt = document.createElement("option");
+    opt.text = `${c.name} @ KES ${c.price}`;
+    opt.value = c.name;
+    companySelect.add(opt);
+  });
+  unitTrusts.forEach(u => {
+    const opt = document.createElement("option");
+    opt.text = `${u.name} @ KES ${u.price}`;
+    opt.value = u.name;
+    unitSelect.add(opt);
+  });
+}
+
+// M-PESA STK Push
+function sendSTK() {
+  const phone = document.getElementById("mpesaPhone").value;
+  const amount = parseInt(document.getElementById("mpesaAmount").value);
+  if (!phone || !amount) return alert("Enter valid phone and amount");
+
+  log(`📲 Sending MPESA STK push to ${phone} for KES ${amount}...`);
+
+  fetch("https://nse-mpesa-backend.replit.app/stkpush", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, amount })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ResponseCode === "0") {
+        wallet += amount;
+        document.getElementById("wallet").textContent = `KES ${wallet}`;
+        alert("✅ Check your phone to complete payment.");
+      } else {
+        alert("❌ M-PESA error: " + data.ResponseDescription);
+      }
+    })
+    .catch(err => alert("❌ Network error: " + err.message));
+}
+
+// Buy shares
+function buyShares() {
+  const company = document.getElementById("companySelect").value;
+  const amount = parseInt(document.getElementById("shareAmount").value);
+  const price = companies.find(c => c.name === company).price;
+  const total = amount * price;
+
+  if (wallet < total) return alert("❌ Insufficient balance");
+
+  wallet -= total;
+  if (!portfolio[company]) portfolio[company] = 0;
+  portfolio[company] += amount;
+  dividends += Math.floor(amount * 0.1);
+  updatePortfolioUI();
+  log(`✅ Bought ${amount} shares of ${company}`);
+}
+
+// Buy Unit Trust
+function buyUnitTrust() {
+  const trust = document.getElementById("unitTrustSelect").value;
+  const amount = parseInt(document.getElementById("unitAmount").value);
+  const price = unitTrusts.find(u => u.name === trust).price;
+  const total = amount * price;
+
+  if (wallet < total) return alert("❌ Insufficient balance");
+
+  wallet -= total;
+  if (!portfolio[trust]) portfolio[trust] = 0;
+  portfolio[trust] += amount;
+  dividends += Math.floor(amount * 0.05);
+  updatePortfolioUI();
+  log(`✅ Bought ${amount} units of ${trust}`);
+}
+
+// Update UI
+function updatePortfolioUI() {
+  document.getElementById("wallet").textContent = `KES ${wallet}`;
+  document.getElementById("dividends").textContent = `KES ${dividends}`;
+
+  const list = document.getElementById("portfolioList");
+  list.innerHTML = "";
+  for (let key in portfolio) {
+    const li = document.createElement("li");
+    li.textContent = `${key}: ${portfolio[key]}`;
+    list.appendChild(li);
+  }
+
+  // Chart
+  const ctx = document.getElementById("portfolioChart").getContext("2d");
+  const labels = Object.keys(portfolio);
+  const data = Object.values(portfolio);
+  new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels,
+      datasets: [{
+        label: "Holdings",
+        data,
+        backgroundColor: ["#0d6efd", "#198754", "#ffc107", "#dc3545", "#6610f2"]
+      }]
+    },
+    options: { responsive: true }
+  });
+}
+
+// Export statement
+function exportCDSC() {
+  const data = JSON.stringify(portfolio, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cdsc-statement.json";
+  a.click();
+}
+
+// Leaderboard & Sacco
+function showLeaderboard() {
+  const lb = document.getElementById("leaderboard");
+  lb.innerHTML = "";
+  const score = Object.values(portfolio).reduce((a, b) => a + b, 0) + dividends;
+  leaderboard.push({ name: currentUser.name, score });
+  leaderboard.sort((a, b) => b.score - a.score);
+
+  leaderboard.forEach(l => {
+    const li = document.createElement("li");
+    li.textContent = `${l.name}: ${l.score}`;
+    lb.appendChild(li);
+  });
+
+  const members = document.getElementById("saccoMembers");
+  members.innerHTML = "";
+  sacco.forEach(m => {
+    const li = document.createElement("li");
+    li.textContent = m;
+    members.appendChild(li);
+  });
+}
+
+// News (mock)
+function showNews() {
+  const news = [
+    "📈 NSE 20 Share Index up 2.5%",
+    "📊 Safaricom leads with 5% gain",
+    "💼 KCB and Equity report strong Q1 earnings",
+    "💰 Government targets retail investors in new bond",
+    "📉 Centum drops by 3% amid profit warning"
+  ];
+  const ul = document.getElementById("marketNews");
+  news.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    ul.appendChild(li);
+  });
+}
